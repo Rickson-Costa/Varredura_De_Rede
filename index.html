@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Rede</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Monitoramento de Rede</h1>
+    <section>
+        <h2>Dispositivos Desconectados</h2>
+        <canvas id="disconnectChart" width="400" height="200"></canvas>
+    </section>
+    <section>
+        <h2>Timeline de Novos Conectados</h2>
+        <ul id="timeline"></ul>
+    </section>
+
+    <script>
+        let disconnectChart;
+
+        // Função para buscar os dados de desconexões
+        async function fetchDisconnectData() {
+            const response = await fetch('/disconnect_data');
+            const data = await response.json();
+
+            const ctx = document.getElementById('disconnectChart').getContext('2d');
+
+            // Se o gráfico já existir, destrua-o antes de recriá-lo
+            if (disconnectChart) {
+                disconnectChart.destroy();
+            }
+
+            // Cria um novo gráfico com os dados atualizados
+            disconnectChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Quantidade de Desconexões',
+                        data: data.data,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Função para buscar os dados da timeline
+        async function fetchTimelineData() {
+            const response = await fetch('/timeline_data');
+            const data = await response.json();
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+
+            data.forEach(event => {
+                const li = document.createElement('li');
+                li.textContent = `IP: ${event.ip}, MAC: ${event.mac}, Conectado em: ${event.timestamp}`;
+                timeline.appendChild(li);
+            });
+        }
+
+        // Atualiza os gráficos e timeline periodicamente
+        setInterval(() => {
+            fetchDisconnectData();
+            fetchTimelineData();
+        }, 5000);
+
+        // Inicializa os dados
+        fetchDisconnectData();
+        fetchTimelineData();
+    </script>
+</body>
+</html>
